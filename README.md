@@ -23,12 +23,13 @@ import (
 func main() {
 	conn := sapi.NewConnection("192.168.x.x", "5000", "account", "password")
 	sysresp := sapi.GetSystemInfo(conn)
-    fmt.Println(fmt.Sprintf("1 minute load: %v.", sysresp.CPU.OneMinLoad))
+	fmt.Println(fmt.Sprintf("1 minute load: %v.", sysresp.CPU.OneMinLoad))
 }
 ```
 
 ## Endpoints implemented
 | Function Name | Synology API | Notes |
+| ------------- | ------------ | ----- |
 | getSIDToken | SYNO.API.Auth | Not an exported function |
 | GetSystemInfo | SYNO.Core.System.Utilization | |
 | GetShareInfo | SYNO.Core.Share | |
