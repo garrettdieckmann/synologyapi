@@ -15,6 +15,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
 	sapi "github.com/garrettdieckmann/synologyapi"
