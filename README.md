@@ -21,8 +21,14 @@ import (
 )
 
 func main() {
-	conn := sapi.NewConnection("192.168.x.x", "5000", "account", "password")
-	sysresp := sapi.GetSystemInfo(conn)
+	conn, err := sapi.NewConnection("192.168.x.x", "5000", "account", "password")
+	if err != nil {
+		log.Fatal(err)
+	}
+	sysresp, err := sapi.GetSystemInfo(conn)
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println(fmt.Sprintf("1 minute load: %v.", sysresp.CPU.OneMinLoad))
 }
 ```
