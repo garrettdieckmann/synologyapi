@@ -424,12 +424,10 @@ type StorageData struct {
 	} `json:"volumes"`
 }
 
-var sconn SynologyConnection
-
 func performHTTPCall(method string, url string) (*http.Response, error) {
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error on %s", method, err)
+		return nil, fmt.Errorf("error on %s: %v", method, err)
 	}
 
 	client := &http.Client{}
