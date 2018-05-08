@@ -2,7 +2,7 @@ package synologyapi
 
 import "fmt"
 import "net/http"
-import "log"
+
 import "encoding/json"
 
 // SynologyConnection encapsulates required connection info to specific NAS
@@ -426,93 +426,110 @@ type StorageData struct {
 
 var sconn SynologyConnection
 
-func performHTTPCall(method string, url string) (response *http.Response) {
+func performHTTPCall(method string, url string) (*http.Response, error) {
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		log.Fatal("should return error", err)
+		return nil, fmt.Errorf("error on %s", method, err)
 	}
 
 	client := &http.Client{}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal("should return error", err)
+		return nil, fmt.Errorf("executing request: %v", err)
 	}
 
-	return resp
+	return resp, nil
 }
 
-// NewConnection initializes Synology Connection
-func NewConnection(host string, port string, account string, password string) (conn *SynologyConnection) {
-	sconn.origin = fmt.Sprintf("http://%s:%s", host, port)
-	sconn.token = getSIDToken(account, password)
+// NewConnection initializes Synology Connection with provided connection information
+func NewConnection(host string, port string, account string, password string) (*SynologyConnection, error) {
+	origin := fmt.Sprintf("http://%s:%s", host, port)
+	token, err := getSIDToken(origin, account, password)
+	if err != nil {
+		return nil, err
+	}
 
-	return &sconn
+	sconn := SynologyConnection{origin: origin, token: token}
+
+	return &sconn, nil
 }
 
 // getSIDToken returns a Synology Auth Token, for the given account
-func getSIDToken(account string, password string) string {
+func getSIDToken(origin string, account string, password string) (string, error) {
 	authVersion := "6"
-	url := fmt.Sprintf("%s/webapi/auth.cgi?api=SYNO.API.Auth&version=%s&method=login&account=%s&passwd=%s&session=Core&format=cookie", sconn.origin, authVersion, account, password)
+	url := fmt.Sprintf("%s/webapi/auth.cgi?api=SYNO.API.Auth&version=%s&method=login&account=%s&passwd=%s&session=Core&format=cookie", origin, authVersion, account, password)
 
-	resp := performHTTPCall("GET", url)
+	resp, err := performHTTPCall("GET", url)
+	if err != nil {
+		return "", err
+	}
 	defer resp.Body.Close()
 
 	var respData authResponse
 
 	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
-		log.Fatal("Should return err", err)
+		return "", fmt.Errorf("error decoding data: %v", err)
 	}
 
-	return respData.Data.Sid
+	return respData.Data.Sid, nil
 }
 
 // GetSystemInfo returns Synology system information
-func GetSystemInfo(conn *SynologyConnection) *SystemUtilizationData {
+func GetSystemInfo(conn *SynologyConnection) (*SystemUtilizationData, error) {
 	version := "1"
 	url := fmt.Sprintf("%s/webapi/entry.cgi?api=SYNO.Core.System.Utilization&version=%s&method=get&_sid=%s", conn.origin, version, conn.token)
 
-	resp := performHTTPCall("GET", url)
+	resp, err := performHTTPCall("GET", url)
+	if err != nil {
+		return nil, err
+	}
 	defer resp.Body.Close()
 
 	var respData systemUtilizationResponse
 
 	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
-		log.Fatal("should return err", err)
+		return nil, fmt.Errorf("on parse: %v", err)
 	}
-	return &respData.Data
+	return &respData.Data, nil
 }
 
 // GetShareInfo returns individual Shared Folder information
-func GetShareInfo(conn *SynologyConnection) *SharedFolderData {
+func GetShareInfo(conn *SynologyConnection) (*SharedFolderData, error) {
 	version := "1"
 	url := fmt.Sprintf("%s/webapi/entry.cgi?api=SYNO.Core.Share&shareType=all&additional=%%5B%%22share_quota%%22%%5D&method=list&version=%s&_sid=%s", conn.origin, version, conn.token)
 
-	resp := performHTTPCall("GET", url)
+	resp, err := performHTTPCall("GET", url)
+	if err != nil {
+		return nil, err
+	}
 	defer resp.Body.Close()
 
 	var respData sharedFolderReponse
 
 	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
-		log.Fatal("should return an err", err)
+		return nil, fmt.Errorf("on parse: %v", err)
 	}
 
-	return &respData.Data
+	return &respData.Data, nil
 }
 
 // GetStorageInfo returns alot of information about storage attached to NAS
-func GetStorageInfo(conn *SynologyConnection) *StorageData {
+func GetStorageInfo(conn *SynologyConnection) (*StorageData, error) {
 	version := "1"
 	url := fmt.Sprintf("%s/webapi/entry.cgi?api=SYNO.Storage.CGI.Storage&version=%s&method=load_info&_sid=%s", conn.origin, version, conn.token)
 
-	resp := performHTTPCall("GET", url)
+	resp, err := performHTTPCall("GET", url)
+	if err != nil {
+		return nil, err
+	}
 	defer resp.Body.Close()
 
 	var respData storageResponse
 
 	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
-		log.Fatal("should return an err", err)
+		return nil, fmt.Errorf("on parse: %v", err)
 	}
 
-	return &respData.Data
+	return &respData.Data, nil
 }
