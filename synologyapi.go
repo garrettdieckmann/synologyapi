@@ -441,16 +441,17 @@ func performHTTPCall(method string, url string) (*http.Response, error) {
 }
 
 // NewConnection initializes Synology Connection with provided connection information
-func (synology SynologyConnection) NewConnection(host string, port string, account string, password string) error {
-	synology.origin = fmt.Sprintf("http://%s:%s", host, port)
-	token, err := getSIDToken(synology.origin, account, password)
+func NewConnection(host string, port string, account string, password string) (SynologyConnection, error) {
+	var conn SynologyConnection
+	conn.origin = fmt.Sprintf("http://%s:%s", host, port)
+	token, err := getSIDToken(conn.origin, account, password)
 	if err != nil {
-		return err
+		return SynologyConnection{}, err
 	}
 
-	synology.token = token
+	conn.token = token
 
-	return nil
+	return conn, nil
 }
 
 // getSIDToken returns a Synology Auth Token, for the given account
