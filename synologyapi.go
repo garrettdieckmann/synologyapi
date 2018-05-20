@@ -441,16 +441,16 @@ func performHTTPCall(method string, url string) (*http.Response, error) {
 }
 
 // NewConnection initializes Synology Connection with provided connection information
-func NewConnection(host string, port string, account string, password string) (*SynologyConnection, error) {
-	origin := fmt.Sprintf("http://%s:%s", host, port)
-	token, err := getSIDToken(origin, account, password)
+func (synology SynologyConnection) NewConnection(host string, port string, account string, password string) error {
+	synology.origin = fmt.Sprintf("http://%s:%s", host, port)
+	token, err := getSIDToken(synology.origin, account, password)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	sconn := SynologyConnection{origin: origin, token: token}
+	synology.token = token
 
-	return &sconn, nil
+	return nil
 }
 
 // getSIDToken returns a Synology Auth Token, for the given account
@@ -474,9 +474,9 @@ func getSIDToken(origin string, account string, password string) (string, error)
 }
 
 // GetSystemInfo returns Synology system information
-func GetSystemInfo(conn *SynologyConnection) (*SystemUtilizationData, error) {
+func (synology SynologyConnection) GetSystemInfo() (*SystemUtilizationData, error) {
 	version := "1"
-	url := fmt.Sprintf("%s/webapi/entry.cgi?api=SYNO.Core.System.Utilization&version=%s&method=get&_sid=%s", conn.origin, version, conn.token)
+	url := fmt.Sprintf("%s/webapi/entry.cgi?api=SYNO.Core.System.Utilization&version=%s&method=get&_sid=%s", synology.origin, version, synology.token)
 
 	resp, err := performHTTPCall("GET", url)
 	if err != nil {
@@ -493,9 +493,9 @@ func GetSystemInfo(conn *SynologyConnection) (*SystemUtilizationData, error) {
 }
 
 // GetShareInfo returns individual Shared Folder information
-func GetShareInfo(conn *SynologyConnection) (*SharedFolderData, error) {
+func (synology SynologyConnection) GetShareInfo() (*SharedFolderData, error) {
 	version := "1"
-	url := fmt.Sprintf("%s/webapi/entry.cgi?api=SYNO.Core.Share&shareType=all&additional=%%5B%%22share_quota%%22%%5D&method=list&version=%s&_sid=%s", conn.origin, version, conn.token)
+	url := fmt.Sprintf("%s/webapi/entry.cgi?api=SYNO.Core.Share&shareType=all&additional=%%5B%%22share_quota%%22%%5D&method=list&version=%s&_sid=%s", synology.origin, version, synology.token)
 
 	resp, err := performHTTPCall("GET", url)
 	if err != nil {
@@ -513,9 +513,9 @@ func GetShareInfo(conn *SynologyConnection) (*SharedFolderData, error) {
 }
 
 // GetStorageInfo returns alot of information about storage attached to NAS
-func GetStorageInfo(conn *SynologyConnection) (*StorageData, error) {
+func (synology SynologyConnection) GetStorageInfo() (*StorageData, error) {
 	version := "1"
-	url := fmt.Sprintf("%s/webapi/entry.cgi?api=SYNO.Storage.CGI.Storage&version=%s&method=load_info&_sid=%s", conn.origin, version, conn.token)
+	url := fmt.Sprintf("%s/webapi/entry.cgi?api=SYNO.Storage.CGI.Storage&version=%s&method=load_info&_sid=%s", synology.origin, version, synology.token)
 
 	resp, err := performHTTPCall("GET", url)
 	if err != nil {
