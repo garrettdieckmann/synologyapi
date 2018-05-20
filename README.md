@@ -18,15 +18,15 @@ import (
 	"log"
 	"strconv"
 
-	sapi "github.com/garrettdieckmann/synologyapi"
+	"github.com/garrettdieckmann/synologyapi"
 )
 
 func main() {
-	conn, err := sapi.NewConnection("192.168.x.x", "5000", "account", "password")
-	if err != nil {
+	var synas synologyapi.SynologyConnection
+	if err := sapi.NewConnection("192.168.x.x", "5000", "account", "password"); err != nil {
 		log.Fatal(err)
 	}
-	sysresp, err := sapi.GetSystemInfo(conn)
+	sysresp, err := synas.GetSystemInfo()
 	if err != nil {
 		log.Fatal(err)
 	}
